@@ -1,6 +1,8 @@
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
+require('dotenv').config();
+const { initializeDatabase } = require('./utils/database');
 
 const port = process.env.PORT || 3000;
 
@@ -26,6 +28,13 @@ const requestHandler = (req, res) => {
 
 const server = http.createServer(requestHandler);
 
-server.listen(port, () => {
-  console.log(`Server listening on port ${port}`);
+// Initialize database and start server
+initializeDatabase().then(() => {
+  server.listen(port, () => {
+    console.log(`Server listening on port ${port}`);
+    console.log(`Database connected to customatch`);
+  });
+}).catch((error) => {
+  console.error('Failed to initialize database:', error);
+  process.exit(1);
 });

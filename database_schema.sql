@@ -24,6 +24,78 @@ CREATE TABLE IF NOT EXISTS users (
   INDEX (created_at)
 );
 
+-- Vendors table
+CREATE TABLE IF NOT EXISTS vendors (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL UNIQUE,
+  business_name VARCHAR(255) NOT NULL,
+  business_logo VARCHAR(500),
+  location VARCHAR(255),
+  description TEXT,
+  approval_status ENUM('pending', 'approved', 'rejected') DEFAULT 'pending',
+  rating DECIMAL(3, 2) DEFAULT 0.00,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX (approval_status),
+  INDEX (rating),
+  INDEX (created_at),
+  UNIQUE KEY (user_id)
+);
+
+-- Cakes table
+CREATE TABLE IF NOT EXISTS cakes (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  vendor_id INT NOT NULL,
+  cake_name VARCHAR(255) NOT NULL,
+  base_price DECIMAL(10, 2) NOT NULL,
+  description TEXT,
+  image VARCHAR(500),
+  is_active BOOLEAN DEFAULT TRUE,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE,
+  INDEX (vendor_id),
+  INDEX (is_active),
+  INDEX (created_at)
+);
+
+-- Cake customization options table
+CREATE TABLE IF NOT EXISTS cake_customization_options (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  cake_id INT NOT NULL,
+  option_type ENUM('flavor', 'color', 'icing', 'topping', 'message', 'size', 'shape', 'theme', 'tiers', 'dietary_restrictions', 'additional_notes') NOT NULL,
+  option_name VARCHAR(255) NOT NULL,
+  extra_price DECIMAL(10, 2) DEFAULT 0.00,
+  image VARCHAR(500),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (cake_id) REFERENCES cakes(id) ON DELETE CASCADE,
+  INDEX (cake_id),
+  INDEX (option_type),
+  INDEX (created_at)
+);
+
+-- Customer customizations table (stores final customer design)
+CREATE TABLE IF NOT EXISTS customer_customizations (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  customer_id INT NOT NULL,
+  cake_id INT NOT NULL,
+  customization_json JSON NOT NULL,
+  preview_image VARCHAR(500),
+  total_price DECIMAL(10, 2) NOT NULL,
+  status ENUM('draft', 'submitted', 'approved', 'rejected', 'completed') DEFAULT 'draft',
+  notes TEXT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (cake_id) REFERENCES cakes(id) ON DELETE CASCADE,
+  INDEX (customer_id),
+  INDEX (cake_id),
+  INDEX (status),
+  INDEX (created_at)
+);
+
 -- Customizations table
 CREATE TABLE IF NOT EXISTS customizations (
   id INT PRIMARY KEY AUTO_INCREMENT,
@@ -38,23 +110,57 @@ CREATE TABLE IF NOT EXISTS customizations (
   INDEX (status)
 );
 
--- Orders table
+-- Orders table (tracks purchases)
 CREATE TABLE IF NOT EXISTS orders (
   id INT PRIMARY KEY AUTO_INCREMENT,
-  customerId INT NOT NULL,
-  bakerId INT,
-  customizationId INT,
-  totalPrice DECIMAL(10, 2),
-  status ENUM('pending', 'confirmed', 'in_progress', 'completed', 'cancelled') DEFAULT 'pending',
-  dueDate DATETIME,
-  createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  FOREIGN KEY (customerId) REFERENCES users(id) ON DELETE CASCADE,
-  FOREIGN KEY (bakerId) REFERENCES users(id) ON DELETE SET NULL,
-  FOREIGN KEY (customizationId) REFERENCES customizations(id) ON DELETE CASCADE,
-  INDEX (customerId),
-  INDEX (bakerId),
-  INDEX (status)
+  customer_id INT NOT NULL,
+  vendor_id INT NOT NULL,
+  customization_id INT NOT NULL,
+  order_number VARCHAR(50) NOT NULL UNIQUE,
+  total_price DECIMAL(10, 2) NOT NULL,
+  status ENUM('pending', 'accepted', 'baking', 'ready', 'delivered', 'cancelled') DEFAULT 'pending',
+  delivery_address TEXT,
+  delivery_date DATE,
+  payment_status ENUM('pending', 'paid', 'failed', 'refunded') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (customer_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (vendor_id) REFERENCES vendors(id) ON DELETE CASCADE,
+  FOREIGN KEY (customization_id) REFERENCES customer_customizations(id) ON DELETE RESTRICT,
+  INDEX (customer_id),
+  INDEX (vendor_id),
+  INDEX (customization_id),
+  INDEX (order_number),
+  INDEX (status),
+  INDEX (payment_status),
+  INDEX (created_at)
+);
+
+-- Payments table
+CREATE TABLE IF NOT EXISTS payments (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  order_id INT NOT NULL,
+  payment_method VARCHAR(100) NOT NULL,
+  transaction_id VARCHAR(255),
+  amount DECIMAL(10, 2) NOT NULL,
+  status ENUM('pending', 'completed', 'failed', 'refunded') DEFAULT 'pending',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (order_id) REFERENCES orders(id) ON DELETE CASCADE,
+  INDEX (order_id),
+  INDEX (status),
+  INDEX (created_at)
+);
+
+-- Refresh tokens table (for secure login)
+CREATE TABLE IF NOT EXISTS refresh_tokens (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL,
+  token VARCHAR(500) NOT NULL,
+  expires_at DATETIME NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  INDEX (user_id),
+  INDEX (token),
+  INDEX (expires_at)
 );
 
 -- Tracking table

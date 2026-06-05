@@ -1,1 +1,228 @@
-/* All CSS Styles and Responsive Designs */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  color: #1a1a2e;
+  background: #faf8f6;
+  line-height: 1.5;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background: #fff;
+  border-bottom: 1px solid #e8e4df;
+}
+
+.logo {
+  font-weight: 700;
+  font-size: 1.25rem;
+  color: #c45c7a;
+}
+
+.auth-nav,
+.user-nav {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.hidden {
+  display: none !important;
+}
+
+.main {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+}
+
+.hero h1 {
+  margin: 0 0 0.5rem;
+  font-size: 2rem;
+}
+
+.hero p {
+  margin: 0;
+  color: #5c5c6e;
+}
+
+.dashboard {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  border: 1px solid #e8e4df;
+}
+
+.dashboard-data {
+  margin: 0;
+  padding: 1rem;
+  background: #f5f3f0;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.btn {
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  cursor: pointer;
+  border: 1px solid transparent;
+  font-family: inherit;
+}
+
+.btn-primary {
+  background: #c45c7a;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #a84a64;
+}
+
+.btn-ghost {
+  background: transparent;
+  color: #1a1a2e;
+  border-color: #d4cfc8;
+}
+
+.btn-ghost:hover {
+  background: #f5f3f0;
+}
+
+.btn-block {
+  width: 100%;
+  margin-top: 0.5rem;
+}
+
+.link-btn {
+  background: none;
+  border: none;
+  color: #c45c7a;
+  cursor: pointer;
+  font-size: inherit;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(26, 26, 46, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+  z-index: 100;
+}
+
+.modal {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  background: #fff;
+  border-radius: 10px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+.modal-close {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  line-height: 1;
+  cursor: pointer;
+  color: #5c5c6e;
+}
+
+.modal h2 {
+  margin: 0 0 1.25rem;
+  font-size: 1.35rem;
+}
+
+.panel label {
+  display: block;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.panel input,
+.panel textarea {
+  display: block;
+  width: 100%;
+  margin-top: 0.35rem;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid #d4cfc8;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-family: inherit;
+}
+
+.panel input:focus,
+.panel textarea:focus {
+  outline: 2px solid #c45c7a;
+  outline-offset: 1px;
+}
+
+.optional,
+.hint {
+  font-weight: 400;
+  color: #8a8a9a;
+}
+
+.form-error {
+  margin: 0 0 0.75rem;
+  color: #b91c1c;
+  font-size: 0.875rem;
+}
+
+.form-switch {
+  margin: 1.25rem 0 0;
+  text-align: center;
+  font-size: 0.875rem;
+  color: #5c5c6e;
+}
+
+.role-tabs {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.role-tab {
+  flex: 1;
+  padding: 0.5rem;
+  border: 1px solid #d4cfc8;
+  border-radius: 6px;
+  background: #faf8f6;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 0.875rem;
+}
+
+.role-tab.active {
+  background: #c45c7a;
+  color: #fff;
+  border-color: #c45c7a;
+}
+
+.vendor-fields {
+  padding-top: 0.25rem;
+  border-top: 1px solid #e8e4df;
+  margin-bottom: 0.5rem;
+}

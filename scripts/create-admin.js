@@ -6,7 +6,7 @@
 const path = require('path');
 require('dotenv').config({ path: path.join(__dirname, '../config.env') });
 
-const { userQueries, initializeDatabase } = require('../utils/database');
+const { userQueries, adminQueries, initializeDatabase } = require('../utils/database');
 const { hashPassword } = require('../utils/authTokens');
 
 async function main() {
@@ -32,8 +32,9 @@ async function main() {
 
   const hashed = await hashPassword(password);
   const result = await userQueries.createUser(fullName, email.toLowerCase(), null, hashed, 'admin');
+  await adminQueries.createSuperAdmin(result.insertId);
 
-  console.log(`Admin created (id: ${result.insertId}, email: ${email})`);
+  console.log(`Super admin created (id: ${result.insertId}, email: ${email})`);
   process.exit(0);
 }
 

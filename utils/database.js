@@ -1,6 +1,86 @@
 const pool = require('../config/database');
 const fs = require('fs');
 const path = require('path');
+const { parsePrivileges, sanitizePrivileges } = require('./adminPrivileges');
+
+async function migrateUsersTable(connection) {
+  const [tables] = await connection.query(
+    "SHOW TABLES LIKE 'users'"
+  );
+  if (tables.length === 0) return;
+
+  const [columns] = await connection.query('DESCRIBE users');
+  const columnNames = columns.map((col) => col.Field);
+  if (columnNames.includes('full_name')) return;
+
+  console.log('Migrating legacy users table to current schema...');
+
+  await connection.query('SET FOREIGN_KEY_CHECKS = 0');
+  await connection.query('DROP TABLE IF EXISTS users');
+  await connection.query(`
+    CREATE TABLE users (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      full_name VARCHAR(255) NOT NULL,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      phone VARCHAR(20),
+      password VARCHAR(255) NOT NULL,
+      role ENUM('customer', 'vendor', 'admin') NOT NULL DEFAULT 'customer',
+      profile_image VARCHAR(500),
+      is_verified BOOLEAN DEFAULT FALSE,
+      status ENUM('active', 'inactive', 'suspended') DEFAULT 'active',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX (email),
+      INDEX (role),
+      INDEX (status),
+      INDEX (created_at)
+    )
+  `);
+  await connection.query('SET FOREIGN_KEY_CHECKS = 1');
+  console.log('✓ Users table migrated');
+}
+
+async function migrateAdminAccounts(connection) {
+  await connection.query(`
+    CREATE TABLE IF NOT EXISTS admin_accounts (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      user_id INT NOT NULL UNIQUE,
+      is_super_admin BOOLEAN DEFAULT FALSE,
+      privileges JSON NOT NULL,
+      created_by INT,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+      FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+      INDEX (is_super_admin)
+    )
+  `);
+
+  await connection.query(`
+    INSERT INTO admin_accounts (user_id, is_super_admin, privileges, created_by)
+    SELECT u.id, TRUE, '[]', NULL
+    FROM users u
+    WHERE u.role = 'admin'
+      AND NOT EXISTS (
+        SELECT 1 FROM admin_accounts a WHERE a.user_id = u.id
+      )
+  `);
+}
+
+function formatAdminRow(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    full_name: row.full_name,
+    email: row.email,
+    status: row.status,
+    is_super_admin: !!row.is_super_admin,
+    privileges: parsePrivileges(row.privileges),
+    created_at: row.created_at,
+    user_created_at: row.user_created_at
+  };
+}
 
 // Initialize database schema on startup
 async function initializeDatabase() {
@@ -9,7 +89,9 @@ async function initializeDatabase() {
     const schema = fs.readFileSync(schemaPath, 'utf8');
     
     const connection = await pool.getConnection();
-    
+
+    await migrateUsersTable(connection);
+
     // Split schema into individual statements and execute
     const statements = schema.split(';').filter(stmt => stmt.trim());
     
@@ -18,7 +100,9 @@ async function initializeDatabase() {
         await connection.query(statement);
       }
     }
-    
+
+    await migrateAdminAccounts(connection);
+
     connection.release();
     console.log('✓ Database schema initialized successfully');
   } catch (error) {
@@ -103,6 +187,72 @@ const userQueries = {
   suspendUser: async (id) => {
     const query = 'UPDATE users SET status = "suspended" WHERE id = ?';
     const [result] = await pool.query(query, [id]);
+    return result;
+  }
+};
+
+// Admin account queries
+const adminQueries = {
+  createSuperAdmin: async (userId, createdBy = null) => {
+    const query = `
+      INSERT INTO admin_accounts (user_id, is_super_admin, privileges, created_by)
+      VALUES (?, TRUE, ?, ?)
+    `;
+    const [result] = await pool.query(query, [userId, '[]', createdBy]);
+    return result;
+  },
+
+  createAdmin: async (userId, privileges, createdBy) => {
+    const query = `
+      INSERT INTO admin_accounts (user_id, is_super_admin, privileges, created_by)
+      VALUES (?, FALSE, ?, ?)
+    `;
+    const [result] = await pool.query(query, [
+      userId,
+      JSON.stringify(sanitizePrivileges(privileges)),
+      createdBy
+    ]);
+    return result;
+  },
+
+  getByUserId: async (userId) => {
+    const query = `
+      SELECT a.*, u.full_name, u.email, u.status
+      FROM admin_accounts a
+      JOIN users u ON a.user_id = u.id
+      WHERE a.user_id = ?
+    `;
+    const [rows] = await pool.query(query, [userId]);
+    return formatAdminRow(rows[0]);
+  },
+
+  getAllAdmins: async () => {
+    const query = `
+      SELECT a.*, u.full_name, u.email, u.status, u.created_at AS user_created_at
+      FROM admin_accounts a
+      JOIN users u ON a.user_id = u.id
+      ORDER BY a.is_super_admin DESC, u.full_name ASC
+    `;
+    const [rows] = await pool.query(query);
+    return rows.map(formatAdminRow);
+  },
+
+  updatePrivileges: async (userId, privileges) => {
+    const query = `
+      UPDATE admin_accounts
+      SET privileges = ?
+      WHERE user_id = ? AND is_super_admin = FALSE
+    `;
+    const [result] = await pool.query(query, [
+      JSON.stringify(sanitizePrivileges(privileges)),
+      userId
+    ]);
+    return result;
+  },
+
+  deleteAdminAccount: async (userId) => {
+    const query = 'DELETE FROM admin_accounts WHERE user_id = ? AND is_super_admin = FALSE';
+    const [result] = await pool.query(query, [userId]);
     return result;
   }
 };
@@ -637,6 +787,7 @@ module.exports = {
   pool,
   initializeDatabase,
   userQueries,
+  adminQueries,
   vendorQueries,
   cakeQueries,
   cakeCustomizationQueries,

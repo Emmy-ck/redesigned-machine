@@ -2,8 +2,10 @@ const express = require('express');
 const {
   userQueries,
   vendorQueries,
+  adminQueries,
   refreshTokenQueries
 } = require('../utils/database');
+const { ALL_PRIVILEGE_IDS } = require('../utils/adminPrivileges');
 const {
   hashPassword,
   verifyPassword,
@@ -48,9 +50,21 @@ async function issueAuthResponse(user, res) {
     vendor = await vendorQueries.getVendorByUserId(user.id);
   }
 
+  let admin = null;
+  if (user.role === 'admin') {
+    const profile = await adminQueries.getByUserId(user.id);
+    if (profile) {
+      admin = {
+        is_super_admin: profile.is_super_admin,
+        privileges: profile.is_super_admin ? ALL_PRIVILEGE_IDS : profile.privileges
+      };
+    }
+  }
+
   return res.status(200).json({
     user: sanitizeUser(user),
     vendor,
+    admin,
     accessToken,
     refreshToken,
     expiresIn: accessExpiresIn
@@ -230,7 +244,18 @@ router.get('/me', authMiddleware, async (req, res) => {
     vendor = await vendorQueries.getVendorByUserId(user.id);
   }
 
-  return res.json({ user: sanitizeUser(user), vendor });
+  let admin = null;
+  if (user.role === 'admin') {
+    const profile = await adminQueries.getByUserId(user.id);
+    if (profile) {
+      admin = {
+        is_super_admin: profile.is_super_admin,
+        privileges: profile.is_super_admin ? ALL_PRIVILEGE_IDS : profile.privileges
+      };
+    }
+  }
+
+  return res.json({ user: sanitizeUser(user), vendor, admin });
 });
 
 module.exports = router;

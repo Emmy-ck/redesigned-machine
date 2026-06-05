@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — Customatch</title>
+    <link rel="stylesheet" href="/css/admin.css">
+  </head>
+  <body>
+    <section id="auth-gate" class="auth-gate">
+      <div class="panel login-panel">
+        <h1>Admin Login</h1>
+        <p class="login-hint">Sign in with your admin account. Make sure the server is running (<code>npm start</code>) and you are on <code>http://localhost:3000/admin.html</code>.</p>
+        <form id="login-form">
+          <label>
+            Email
+            <input type="email" name="email" required autocomplete="email">
+          </label>
+          <label>
+            Password
+            <input type="password" name="password" required autocomplete="current-password">
+          </label>
+          <p id="login-error" class="form-error hidden"></p>
+          <button type="submit" class="btn btn-primary btn-block">Login</button>
+        </form>
+        <p class="back-link"><a href="/">Back to site</a></p>
+      </div>
+    </section>
+
+    <div id="dashboard-app" class="hidden">
+      <header class="topbar">
+        <div class="topbar-left">
+          <h1 class="page-title">Admin Dashboard</h1>
+          <p id="admin-role-label" class="role-label"></p>
+        </div>
+        <div class="topbar-right">
+          <span id="admin-name"></span>
+          <button type="button" id="logout-btn" class="btn btn-primary">Logout</button>
+        </div>
+      </header>
+
+      <main class="layout">
+        <section class="panel">
+          <h2>Overview</h2>
+          <p id="welcome-text"></p>
+          <div id="privileges-box">
+            <h3>Your privileges</h3>
+            <ul id="privileges-list" class="privilege-list"></ul>
+          </div>
+        </section>
+
+        <section id="super-admin-panel" class="panel hidden">
+          <h2>Manage Admins</h2>
+
+          <form id="create-admin-form" class="admin-form">
+            <div class="form-grid">
+              <label>
+                Full name
+                <input type="text" name="full_name" required>
+              </label>
+              <label>
+                Email
+                <input type="email" name="email" required>
+              </label>
+              <label>
+                Password
+                <input type="password" name="password" required minlength="8">
+              </label>
+            </div>
+
+            <fieldset class="privilege-fieldset">
+              <legend>Privileges</legend>
+              <div id="privilege-options" class="privilege-options"></div>
+            </fieldset>
+
+            <p id="create-admin-error" class="form-error hidden"></p>
+            <button type="submit" class="btn btn-primary">Add Admin</button>
+          </form>
+
+          <div class="admin-table-wrap">
+            <table class="admin-table">
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th>Privileges</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="admins-table-body"></tbody>
+            </table>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <div id="edit-modal" class="modal hidden" role="dialog" aria-modal="true">
+      <div class="modal-card">
+        <h3>Edit Privileges</h3>
+        <p id="edit-admin-name"></p>
+        <form id="edit-privileges-form">
+          <fieldset class="privilege-fieldset">
+            <legend>Privileges</legend>
+            <div id="edit-privilege-options" class="privilege-options"></div>
+          </fieldset>
+          <p id="edit-admin-error" class="form-error hidden"></p>
+          <div class="modal-actions">
+            <button type="button" id="cancel-edit-btn" class="btn">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <script src="/js/admin.js"></script>
+  </body>
+</html>

@@ -150,6 +150,20 @@ CREATE TABLE IF NOT EXISTS payments (
   INDEX (created_at)
 );
 
+-- Admin accounts table (super admin and delegated admins)
+CREATE TABLE IF NOT EXISTS admin_accounts (
+  id INT PRIMARY KEY AUTO_INCREMENT,
+  user_id INT NOT NULL UNIQUE,
+  is_super_admin BOOLEAN DEFAULT FALSE,
+  privileges JSON NOT NULL,
+  created_by INT,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+  FOREIGN KEY (created_by) REFERENCES users(id) ON DELETE SET NULL,
+  INDEX (is_super_admin)
+);
+
 -- Refresh tokens table (for secure login)
 CREATE TABLE IF NOT EXISTS refresh_tokens (
   id INT PRIMARY KEY AUTO_INCREMENT,

@@ -8,6 +8,7 @@ const cookieParser = require('cookie-parser');
 const { initializeDatabase } = require('./utils/database');
 
 const authRoutes = require('./routes/auth');
+const customerRoutes = require('./routes/customer');
 const vendorRoutes = require('./routes/vendor');
 const adminRoutes = require('./routes/admin');
 
@@ -18,11 +19,12 @@ app.use(helmet());
 app.use(cors({ origin: true, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public')));
-
 app.use('/api/auth', authRoutes);
+app.use('/customer', customerRoutes);
 app.use('/vendor', vendorRoutes);
 app.use('/admin', adminRoutes);
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok' });
